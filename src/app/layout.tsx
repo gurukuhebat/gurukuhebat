@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { PWARegistrar } from "@/components/pwa-registrar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -83,6 +84,7 @@ export default function RootLayout({
           <Sonner position="top-right" richColors closeButton />
           <Analytics />
           <SpeedInsights />
+          <PWARegistrar />
         </ThemeProvider>
       </body>
     </html>

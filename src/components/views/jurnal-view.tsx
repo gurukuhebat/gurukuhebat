@@ -12,6 +12,7 @@ import {
   BookOpen,
   AlertCircle,
   Folder,
+  Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -44,7 +45,8 @@ import { IdentityForm } from "@/components/shared/identity-form";
 import { DocPreviewDialog } from "@/components/shared/doc-preview-dialog";
 import { DocKop, DocPengesahan } from "@/components/shared/doc-parts";
 import { cetakJurnal, cetakSesuaiPratinjau } from "@/lib/pdf";
-import { tglPendek } from "@/lib/format";
+import { tglPendek, todayISO } from "@/lib/format";
+import { uid } from "@/lib/bobot";
 import { toast } from "sonner";
 
 const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
@@ -54,6 +56,7 @@ export function JurnalView() {
   const addEntry = useStore((s) => s.addJurnalEntry);
   const updateEntry = useStore((s) => s.updateJurnalEntry);
   const deleteEntry = useStore((s) => s.deleteJurnalEntry);
+  const setJurnal = useStore((s) => s.setJurnal);
   const identitas = useStore((s) => s.identitas);
   const exportData = useStore((s) => s.exportJSON);
 
@@ -94,6 +97,22 @@ export function JurnalView() {
   const handleAdd = () => {
     addEntry();
     toast.success(`Pertemuan ke-${jurnal.length + 1} ditambahkan.`);
+  };
+
+  const handleMagicCopy = () => {
+    if (jurnal.length === 0) {
+      toast.warning("Belum ada jurnal untuk disalin.");
+      return;
+    }
+    const lastEntry = jurnal[jurnal.length - 1];
+    const newEntry = {
+      ...lastEntry,
+      id: uid("j"),
+      minggu: jurnal.length + 1,
+      tanggal: todayISO(),
+    };
+    setJurnal([...jurnal, newEntry]);
+    toast.success(`✨ Pertemuan ke-${lastEntry.minggu} berhasil disalin.`);
   };
 
   const handleDelete = async (id: string, minggu: number) => {
@@ -207,10 +226,16 @@ export function JurnalView() {
             </span>
             Entri Pertemuan / Mingguan
           </CardTitle>
-          <Button size="sm" variant="secondary" onClick={handleAdd}>
-            <Plus className="mr-1 size-4" />
-            Tambah Pertemuan
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleMagicCopy} className="border-primary/30 text-primary hover:bg-primary/10">
+              <Copy className="mr-1 size-4" />
+              ✨ Salin dari Minggu Lalu
+            </Button>
+            <Button size="sm" variant="secondary" onClick={handleAdd}>
+              <Plus className="mr-1 size-4" />
+              Tambah Pertemuan
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {jurnal.length === 0 ? (

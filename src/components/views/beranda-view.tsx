@@ -18,6 +18,7 @@ import {
   ClipboardList,
   AlertTriangle,
   Circle,
+  BellRing,
 } from "lucide-react";
 import {
   BarChart,
@@ -105,6 +106,46 @@ export function BerandaView() {
   const absensiHari = Object.keys(absensi).filter((tgl) =>
     Object.keys(absensi[tgl] || {}).length > 0
   ).length;
+
+  // --- Early Warning System (EWS) & Grafik Absensi ---
+  const kkm = 70;
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  
+  const absensiBulanIni = Object.keys(absensi).filter((tgl) => tgl.startsWith(currentMonthStr));
+  
+  const absensiStats = { H: 0, S: 0, I: 0, A: 0, B: 0 };
+  absensiBulanIni.forEach((tgl) => {
+    Object.values(absensi[tgl]).forEach((status) => {
+      if (status && absensiStats[status as keyof typeof absensiStats] !== undefined) {
+        absensiStats[status as keyof typeof absensiStats]++;
+      }
+    });
+  });
+  
+  const dataPieAbsensi = [
+    { name: "Hadir", value: absensiStats.H, warna: "#10b981" },
+    { name: "Sakit", value: absensiStats.S, warna: "#3b82f6" },
+    { name: "Izin", value: absensiStats.I, warna: "#eab308" },
+    { name: "Alpa/Bolos", value: absensiStats.A + absensiStats.B, warna: "#ef4444" },
+  ].filter(d => d.value > 0);
+
+  const ewsSiswa = siswa.map(s => {
+    let alpaCount = 0;
+    absensiBulanIni.forEach((tgl) => {
+      const st = absensi[tgl][s.id];
+      if (st === "A" || st === "B") alpaCount++;
+    });
+    const h = hitungNilaiAkhir(nilai[s.id] || {}, komponen);
+    const nilaiRendah = h.akhir !== null && h.akhir < kkm;
+    
+    return {
+      siswa: s,
+      alpaCount,
+      nilaiRendah,
+      nilaiAkhir: h.akhir
+    };
+  }).filter(x => x.alpaCount >= 3 || x.nilaiRendah);
 
   // Health check — apa saja yang belum siap untuk cetak PDF
   const healthChecks: Array<{
@@ -306,6 +347,43 @@ export function BerandaView() {
         </div>
       </motion.section>
 
+      {/* EARLY WARNING SYSTEM */}
+      {ewsSiswa.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+        >
+          <Card className="border-destructive/40 bg-destructive/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base text-destructive">
+                <BellRing className="size-5" />
+                Sistem Peringatan Dini (EWS)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {ewsSiswa.map((ews) => (
+                  <div key={ews.siswa.id} className="flex flex-col gap-1 rounded-lg border border-destructive/20 bg-background/50 p-3 text-sm">
+                    <span className="font-semibold">{ews.siswa.nama}</span>
+                    {ews.alpaCount >= 3 && (
+                      <span className="text-xs text-destructive">
+                        • {ews.alpaCount}x Alpa/Bolos bulan ini
+                      </span>
+                    )}
+                    {ews.nilaiRendah && (
+                      <span className="text-xs text-destructive">
+                        • Nilai Akhir {ews.nilaiAkhir} (Di bawah KKM {kkm})
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+      )}
+
       {/* STATS GRID */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {stats.map((s, i) => (
@@ -428,6 +506,53 @@ export function BerandaView() {
                       />
                       <Bar dataKey="rata" fill="var(--primary)" radius={[6, 6, 0, 0]} />
                     </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {dataPieAbsensi.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <Card className="card-fancy h-full">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <CalendarCheck className="size-4 text-primary" />
+                    Absensi Bulan Ini
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={dataPieAbsensi}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={2}
+                      >
+                        {dataPieAbsensi.map((d) => (
+                          <Cell key={d.name} fill={d.warna} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(v: number) => [`${v} hari`, "Jumlah"]}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "1px solid var(--border)",
+                          background: "var(--popover)",
+                          color: "var(--popover-foreground)",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "12px" }} />
+                    </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>

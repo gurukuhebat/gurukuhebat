@@ -12,6 +12,8 @@ import {
   CheckCheck,
   Eraser,
   Info,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -139,6 +141,7 @@ export function AbsensiView() {
 
   const [selectedDate, setSelectedDate] = React.useState<string>(todayISO());
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [isGridMode, setIsGridMode] = React.useState(false);
 
   const dayAbsensi = absensi[selectedDate] || {};
 
@@ -171,6 +174,32 @@ export function AbsensiView() {
     const total = Object.values(monthCounts).reduce((a, b) => a + b, 0);
     return { monthCounts, total };
   }, [absensi, selectedDate]);
+
+  const cycleStatus = (siswaId: string) => {
+    const STATUS_CYCLE: (AbsensiStatus | undefined)[] = ["H", "S", "I", "A", "B", undefined];
+    const current = dayAbsensi[siswaId];
+    let nextIdx = 0;
+    if (current) {
+      const idx = STATUS_CYCLE.indexOf(current);
+      if (idx !== -1) {
+        nextIdx = (idx + 1) % STATUS_CYCLE.length;
+      }
+    }
+    const nextStatus = STATUS_CYCLE[nextIdx];
+    
+    if (nextStatus) {
+      setAbsensi(selectedDate, siswaId, nextStatus);
+    } else {
+      const next = { ...absensi };
+      if (next[selectedDate]) {
+        delete next[selectedDate][siswaId];
+        if (Object.keys(next[selectedDate]).length === 0) {
+          delete next[selectedDate];
+        }
+      }
+      useStore.setState({ absensi: next });
+    }
+  };
 
   const handleSetStatus = (siswaId: string, status: AbsensiStatus) => {
     // Toggle off if same status
@@ -379,77 +408,111 @@ export function AbsensiView() {
         </Card>
       ) : (
         <Card className="card-fancy">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="size-4 text-primary" />
               Daftar Kehadiran
             </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setIsGridMode(!isGridMode)}>
+              {isGridMode ? <List className="mr-2 size-4" /> : <LayoutGrid className="mr-2 size-4" />}
+              {isGridMode ? "Mode Tabel" : "Mode Grid"}
+            </Button>
           </CardHeader>
           <CardContent>
             <p className="mb-3 text-xs text-muted-foreground">
-              Klik salah satu tombol (H / S / I / A / B) untuk menandai. Klik
-              ulang untuk menghapus.
+              {isGridMode ? "Ketuk kartu siswa untuk mengubah status secara cepat." : "Klik salah satu tombol (H / S / I / A / B) untuk menandai. Klik ulang untuk menghapus."}
             </p>
-            <div className="overflow-x-auto rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-12 text-center">No</TableHead>
-                    <TableHead className="min-w-[180px]">Nama Siswa</TableHead>
-                    <TableHead>NISN</TableHead>
-                    <TableHead className="text-center">Kehadiran</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {siswa.map((m, i) => {
-                    const cur = dayAbsensi[m.id];
-                    return (
-                      <TableRow key={m.id} className="hover:bg-muted/30">
-                        <TableCell className="text-center text-muted-foreground">
-                          {i + 1}
-                        </TableCell>
-                        <TableCell className="font-medium">{m.nama}</TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {m.nisn || "—"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center gap-1.5">
-                            <TooltipProvider delayDuration={200}>
-                              {STATUS_LIST.map((s) => {
-                                const active = cur === s.code;
-                                return (
-                                  <Tooltip key={s.code}>
-                                    <TooltipTrigger asChild>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSetStatus(m.id, s.code)}
-                                        className={cn(
-                                          "grid size-8 place-items-center rounded-md border text-xs font-bold transition-all",
-                                          active
-                                            ? cn(s.bgColor, s.color, s.borderColor, "shadow-sm scale-105")
-                                            : "border-border bg-background text-muted-foreground hover:bg-accent hover:border-primary/40"
-                                        )}
-                                        aria-pressed={active}
-                                        aria-label={`${s.fullLabel} (${s.code})`}
-                                      >
-                                        {s.label}
-                                      </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">
-                                      {s.fullLabel}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                );
-                              })}
-                            </TooltipProvider>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            {isGridMode ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {siswa.map((m) => {
+                  const cur = dayAbsensi[m.id];
+                  const cfg = cur ? STATUS_BY_CODE[cur] : null;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => cycleStatus(m.id)}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-2 rounded-xl border p-4 text-center transition-all hover:scale-[1.02]",
+                        cfg ? cn(cfg.bgColor, cfg.borderColor, "shadow-sm") : "border-border bg-card hover:border-primary/40"
+                      )}
+                    >
+                      <div className="font-semibold text-sm leading-tight">{m.nama}</div>
+                      <div className="text-[10px] text-muted-foreground">{m.nisn || "—"}</div>
+                      {cfg ? (
+                        <div className={cn("mt-1 text-2xl font-black", cfg.color)}>
+                          {cfg.label}
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-2xl font-black text-muted-foreground/20">
+                          ?
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12 text-center">No</TableHead>
+                      <TableHead className="min-w-[180px]">Nama Siswa</TableHead>
+                      <TableHead>NISN</TableHead>
+                      <TableHead className="text-center">Kehadiran</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {siswa.map((m, i) => {
+                      const cur = dayAbsensi[m.id];
+                      return (
+                        <TableRow key={m.id} className="hover:bg-muted/30">
+                          <TableCell className="text-center text-muted-foreground">
+                            {i + 1}
+                          </TableCell>
+                          <TableCell className="font-medium">{m.nama}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {m.nisn || "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center gap-1.5">
+                              <TooltipProvider delayDuration={200}>
+                                {STATUS_LIST.map((s) => {
+                                  const active = cur === s.code;
+                                  return (
+                                    <Tooltip key={s.code}>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSetStatus(m.id, s.code)}
+                                          className={cn(
+                                            "grid size-8 place-items-center rounded-md border text-xs font-bold transition-all",
+                                            active
+                                              ? cn(s.bgColor, s.color, s.borderColor, "shadow-sm scale-105")
+                                              : "border-border bg-background text-muted-foreground hover:bg-accent hover:border-primary/40"
+                                          )}
+                                          aria-pressed={active}
+                                          aria-label={`${s.fullLabel} (${s.code})`}
+                                        >
+                                          {s.label}
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        {s.fullLabel}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </TooltipProvider>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

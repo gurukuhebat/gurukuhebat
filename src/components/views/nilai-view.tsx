@@ -75,6 +75,7 @@ import { cetakNilai, cetakSesuaiPratinjau } from "@/lib/pdf";
 import { tglPendek, todayISO } from "@/lib/format";
 import type { Komponen, Siswa, CatatanSiswa } from "@/lib/types";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 export function NilaiView() {
   const siswa = useStore((s) => s.siswa);
@@ -1119,15 +1120,42 @@ function ImportCsvDialog({
   onImport: (items: { nama: string; nisn: string }[]) => void;
 }) {
   const [text, setText] = React.useState("");
+  const [excelData, setExcelData] = React.useState<{nama: string, nisn: string}[]>([]);
   const fileRef = React.useRef<HTMLInputElement>(null);
-  const parsed = React.useMemo(() => (text ? parseCSVSiswa(text) : []), [text]);
+  
+  const parsed = React.useMemo(() => {
+    if (excelData.length > 0) return excelData;
+    return text ? parseCSVSiswa(text) : [];
+  }, [text, excelData]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setText(String(reader.result || ""));
-    reader.readAsText(f);
+    
+    try {
+      if (f.name.endsWith('.xlsx') || f.name.endsWith('.xls')) {
+        const buffer = await f.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<any>(ws, { header: 1 });
+        
+        // Convert to text for our existing parser
+        const csvText = data.map((row: any[]) => row.join(",")).join("\n");
+        setText(csvText);
+        setExcelData([]);
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setText(String(reader.result || ""));
+          setExcelData([]);
+        };
+        reader.readAsText(f);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal membaca file Excel.");
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -1158,6 +1186,7 @@ function ImportCsvDialog({
   React.useEffect(() => {
     if (!open) {
       setText("");
+      setExcelData([]);
       if (fileRef.current) fileRef.current.value = "";
     }
   }, [open]);
@@ -1170,7 +1199,7 @@ function ImportCsvDialog({
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Format didukung: <strong>CSV (koma)</strong>,{" "}
+            Format didukung: <strong>Excel (.xlsx)</strong>, <strong>CSV (koma)</strong>,{" "}
             <strong>TSV (tab)</strong>, atau <strong>titik-koma</strong>. Bisa
             dengan atau tanpa baris header (Nama, NISN).
           </p>
@@ -1179,7 +1208,7 @@ function ImportCsvDialog({
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,.txt,.tsv,text/csv,text/plain"
+              accept=".xlsx,.xls,.csv,.txt,.tsv,text/csv,text/plain"
               onChange={handleFile}
               className="hidden"
               id="csv-file-input"

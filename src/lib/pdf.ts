@@ -33,39 +33,64 @@ function getPdfImage(dataUrl: string, width = 60): PdfImage | null {
 }
 
 function buildKop(idn: AppData["identitas"], aset: AppData["aset"], pengesahan: AppData["pengesahan"]) {
+  const logoWidth = aset.logoSize || 60;
+  let headerStack: any[] = [];
+  
+  if (idn.teksKopKustom) {
+    headerStack = [
+      {
+        text: idn.teksKopKustom,
+        fontSize: 12,
+        bold: true,
+        alignment: "center" as const,
+        lineHeight: 1.3
+      }
+    ];
+  } else {
+    if (idn.dinasAtauYayasan) {
+      headerStack.push({
+        text: idn.dinasAtauYayasan.toUpperCase(),
+        fontSize: 11,
+        bold: true,
+        alignment: "center" as const,
+      });
+    }
+    headerStack.push({
+      text: (idn.sekolah || "NAMA SEKOLAH").toUpperCase(),
+      fontSize: 14,
+      bold: true,
+      alignment: "center" as const,
+    });
+    if (idn.skHukum) {
+      headerStack.push({
+        text: idn.skHukum,
+        fontSize: 9,
+        alignment: "center" as const,
+        margin: [0, 2, 0, 0]
+      });
+    }
+    if (idn.alamat) {
+      headerStack.push({
+        text: idn.alamat,
+        fontSize: 9,
+        alignment: "center" as const,
+        margin: [0, 2, 0, 0]
+      });
+    }
+  }
+
   return {
     columns: [
       {
-        width: 70,
-        stack: [aset.logo ? getPdfImage(aset.logo, 60) : { text: "", width: 60 }],
+        width: logoWidth + 10,
+        stack: [aset.logo ? getPdfImage(aset.logo, logoWidth) : { text: "", width: logoWidth }],
         alignment: "center" as const,
       },
       {
         width: "*",
-        stack: [
-          {
-            text:
-              "PEMERINTAH KOTA / KABUPATEN " +
-              (pengesahan.kota || "...............").toUpperCase(),
-            fontSize: 11,
-            bold: true,
-            alignment: "center" as const,
-          },
-          { text: "DINAS PENDIDIKAN", fontSize: 11, bold: true, alignment: "center" as const },
-          {
-            text: (idn.sekolah || "NAMA SEKOLAH").toUpperCase(),
-            fontSize: 13,
-            bold: true,
-            alignment: "center" as const,
-          },
-          {
-            text: "Alamat: ........................................................................",
-            fontSize: 9,
-            alignment: "center" as const,
-          },
-        ],
+        stack: headerStack,
       },
-      { width: 70, text: "" },
+      { width: logoWidth + 10, text: "" },
     ],
     margin: [0, 0, 0, 8] as [number, number, number, number],
   };

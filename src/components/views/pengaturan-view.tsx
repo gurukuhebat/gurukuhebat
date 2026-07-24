@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import { useStore } from "@/lib/store";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { IdentityForm } from "@/components/shared/identity-form";
@@ -32,6 +33,7 @@ import { AssetUploadDialog } from "@/components/shared/asset-upload-dialog";
 import { PRESET_BOBOT, DEFAULT_KATEGORI } from "@/lib/bobot";
 import type { Aset, Kategori, Pengesahan, Pengaturan } from "@/lib/types";
 import { toast } from "sonner";
+import { removeWhiteBackground } from "@/lib/image";
 
 export function PengaturanView() {
   return (
@@ -178,6 +180,19 @@ function AsetPanel() {
     toast.info("Gambar dihapus.");
   };
 
+  const handleMakeTransparent = async (key: keyof Aset) => {
+    const dataUrl = aset[key] as string;
+    if (!dataUrl) return;
+    
+    try {
+      const transparentData = await removeWhiteBackground(dataUrl, 240);
+      setAset({ [key]: transparentData } as Partial<Aset>);
+      toast.success("Background putih berhasil dihapus!");
+    } catch (error) {
+      toast.error("Gagal menghapus background.");
+    }
+  };
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {ASET_ITEMS.map((item) => {
@@ -208,16 +223,27 @@ function AsetPanel() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 min-w-[120px]"
                   onClick={() => setOpenKey(item.key)}
                 >
                   <Upload className="mr-1.5 size-3.5" />
                   {data ? "Ganti" : item.buttonLabel}
                 </Button>
+                {data && item.key === "logo" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 min-w-[120px]"
+                    onClick={() => handleMakeTransparent(item.key)}
+                    title="Buat background putih jadi transparan"
+                  >
+                    Hapus Background
+                  </Button>
+                )}
                 {data && (
                   <Button
                     size="sm"
@@ -229,6 +255,21 @@ function AsetPanel() {
                   </Button>
                 )}
               </div>
+              {item.key === "logo" && (
+                <div className="mt-3 space-y-2 border-t pt-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Ukuran Logo di Kop Surat</Label>
+                    <span className="text-xs text-muted-foreground">{aset.logoSize || 80}px</span>
+                  </div>
+                  <Slider
+                    value={[aset.logoSize || 80]}
+                    min={40}
+                    max={150}
+                    step={5}
+                    onValueChange={(val) => setAset({ logoSize: val[0] })}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         );

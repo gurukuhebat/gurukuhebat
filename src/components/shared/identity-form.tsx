@@ -4,6 +4,7 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ButtonProps } from "@/components/ui/button";
 import { Save, School } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -80,12 +81,61 @@ export function IdentityForm({
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="idn-dinas">Dinas Pendidikan / Yayasan</Label>
+        <Input
+          id="idn-dinas"
+          value={form.dinasAtauYayasan || ""}
+          onChange={(e) => setForm((f) => ({ ...f, dinasAtauYayasan: e.target.value }))}
+          placeholder="mis. DINAS PENDIDIKAN KOTA SURABAYA"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="idn-sk">SK Hukum / Izin Operasional</Label>
+        <Input
+          id="idn-sk"
+          value={form.skHukum || ""}
+          onChange={(e) => setForm((f) => ({ ...f, skHukum: e.target.value }))}
+          placeholder="mis. SK No: 123/456/2025"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="idn-alamat">Alamat Lengkap</Label>
+        <Textarea
+          id="idn-alamat"
+          value={form.alamat || ""}
+          onChange={(e) => setForm((f) => ({ ...f, alamat: e.target.value }))}
+          placeholder="mis. Jl. Pendidikan No. 1, Surabaya 60123. Telp: (031) 123456"
+          rows={2}
+        />
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="idn-mapel">Mata Pelajaran (opsional)</Label>
         <Input
           id="idn-mapel"
-          value={form.mapel}
+          value={form.mapel || ""}
           onChange={(e) => setForm((f) => ({ ...f, mapel: e.target.value }))}
           placeholder="mis. Akidah Akhlak"
+        />
+      </div>
+
+      <div className="rounded-xl border bg-muted/20 p-4 space-y-3 mt-4">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="idn-custom-kop" className="font-semibold">
+            Gunakan Kop Teks Bebas (Kustom)
+          </Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Jika diisi, teks ini akan <strong>menggantikan</strong> format Kop Surat otomatis (Dinas, Sekolah, SK, Alamat) pada file PDF cetak. Pisahkan baris dengan menekan Enter.
+        </p>
+        <Textarea
+          id="idn-custom-kop"
+          value={form.teksKopKustom || ""}
+          onChange={(e) => setForm((f) => ({ ...f, teksKopKustom: e.target.value }))}
+          placeholder="YAYASAN AL-HIKMAH&#10;SEKOLAH DASAR ISLAM AL-HIKMAH&#10;Jl. Kemerdekaan No.1"
+          rows={4}
         />
       </div>
 

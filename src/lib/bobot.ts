@@ -20,14 +20,14 @@ export const DEFAULT_KOMPONEN: Komponen[] = [
 ];
 
 export const DEFAULT_DATA: AppData = {
-  identitas: { sekolah: "", kelas: "", tahun: "", mapel: "" },
+  identitas: { sekolah: "", kelas: "", tahun: "", mapel: "", dinasAtauYayasan: "", skHukum: "", alamat: "", teksKopKustom: "" },
   jurnal: [],
   siswa: [],
   komponen: DEFAULT_KOMPONEN,
   nilai: {},
   absensi: {},
   catatan: [],
-  aset: { logo: "", ttdKepsek: "", ttdGuru: "", stempel: "" },
+  aset: { logo: "", logoSize: 80, ttdKepsek: "", ttdGuru: "", stempel: "" },
   pengesahan: {
     kota: "",
     tanggal: "",

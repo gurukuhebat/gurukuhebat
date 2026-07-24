@@ -5,6 +5,10 @@ export interface Identitas {
   kelas: string;
   tahun: string;
   mapel: string;
+  dinasAtauYayasan: string;
+  skHukum: string;
+  alamat: string;
+  teksKopKustom: string;
 }
 
 export interface JurnalEntry {
@@ -51,6 +55,7 @@ export interface CatatanSiswa {
 
 export interface Aset {
   logo: string;
+  logoSize: number;
   ttdKepsek: string;
   ttdGuru: string;
   stempel: string;

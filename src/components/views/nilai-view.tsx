@@ -188,7 +188,7 @@ function InputPanel() {
       const kat = kategoriNilai(h.akhir, pengaturan.kategori);
       const kompVals = komponen.map((k) => {
         const entri = (nilai[m.id] && nilai[m.id][k.id]) || [];
-        const angka = entri.map(parseFloat).filter((x) => !isNaN(x));
+        const angka = entri.map((v) => Number(v)).filter((x) => !isNaN(x));
         return angka.length
           ? angkaBersih(angka.reduce((s, x) => s + x, 0) / angka.length)
           : "";
@@ -961,7 +961,7 @@ function NilaiDocument() {
                 <td>{m.nama}</td>
                 {komponen.map((k) => {
                   const entri = (nilai[m.id] && nilai[m.id][k.id]) || [];
-                  const angka = entri.map(parseFloat).filter((x) => !isNaN(x));
+                  const angka = entri.map((v) => Number(v)).filter((x) => !isNaN(x));
                   const r = angka.length
                     ? angkaBersih(angka.reduce((s, x) => s + x, 0) / angka.length)
                     : null;

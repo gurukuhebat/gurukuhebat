@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ButtonProps } from "@/components/ui/button";
 import { Save, School } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -149,5 +148,4 @@ export function IdentityForm({
   );
 }
 
-// Helper to avoid unused import warning when ButtonProps is exported but not used directly.
-export type { ButtonProps };
+

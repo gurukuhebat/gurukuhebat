@@ -224,7 +224,7 @@ function AsetPanel() {
                 {data && (
                   <div className="flex size-16 shrink-0 items-center justify-center rounded-lg border bg-white p-1">
                     <img
-                      src={data}
+                      src={data as string}
                       alt={item.title}
                       style={{ maxWidth: item.w, maxHeight: item.h }}
                       className="max-h-14 max-w-full object-contain"
@@ -289,7 +289,7 @@ function AsetPanel() {
         onOpenChange={(v) => !v && setOpenKey(null)}
         title={ASET_ITEMS.find((i) => i.key === openKey)?.title ?? "Unggah Gambar"}
         label={ASET_ITEMS.find((i) => i.key === openKey)?.buttonLabel}
-        currentData={openKey ? aset[openKey] : undefined}
+        currentData={openKey ? (aset[openKey] as string) : undefined}
         allowDelete={openKey ? !!aset[openKey] : false}
         onSave={(url) => openKey && handleSave(openKey, url)}
         onDelete={() => openKey && handleDelete(openKey)}

@@ -4,8 +4,8 @@ import { useStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 
 export function CustomThemeProvider() {
-  const { data } = useStore();
-  const tema = data.pengaturan?.tema;
+  const pengaturan = useStore((s) => s.pengaturan);
+  const tema = pengaturan?.tema;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

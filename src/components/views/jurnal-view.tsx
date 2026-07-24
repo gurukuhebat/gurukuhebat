@@ -11,8 +11,15 @@ import {
   Clock,
   BookOpen,
   AlertCircle,
+  Folder,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +59,37 @@ export function JurnalView() {
 
   const confirm = useConfirm();
   const [previewOpen, setPreviewOpen] = React.useState(false);
+
+  // Grouping Logic
+  const groupedJurnal = React.useMemo(() => {
+    const getMonthName = (dateStr: string) => {
+      if (!dateStr) return "Draft / Belum Ditentukan";
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "Draft / Belum Ditentukan";
+      return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(d);
+    };
+
+    const getMonthSortKey = (dateStr: string) => {
+      if (!dateStr) return "0000-00"; // Draft at top
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "0000-00";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+
+    const groups: Record<string, { label: string; sortKey: string; entries: (typeof jurnal[0] & { originalIndex: number })[] }> = {};
+    jurnal.forEach((e, idx) => {
+      const label = getMonthName(e.tanggal);
+      if (!groups[label]) {
+        groups[label] = { label, sortKey: getMonthSortKey(e.tanggal), entries: [] };
+      }
+      groups[label].entries.push({ ...e, originalIndex: idx });
+    });
+
+    return Object.values(groups).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [jurnal]);
+
+  // Keys for accordion default open (open all by default so it's easy to see)
+  const allGroupKeys = React.useMemo(() => groupedJurnal.map(g => g.label), [groupedJurnal]);
 
   const handleAdd = () => {
     addEntry();
@@ -192,152 +230,169 @@ export function JurnalView() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <AnimatePresence initial={false}>
-                {jurnal.map((e, idx) => (
-                  <motion.div
-                    key={e.id}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden rounded-xl border bg-card"
-                  >
-                    <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="grid size-7 place-items-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-                          {idx + 1}
-                        </span>
-                        <span className="text-sm font-medium">
-                          Pertemuan ke-{e.minggu}
-                        </span>
-                      </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => handleDelete(e.id, e.minggu)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Hapus pertemuan</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+            <Accordion type="multiple" defaultValue={allGroupKeys} className="w-full space-y-4">
+              {groupedJurnal.map((group) => (
+                <AccordionItem key={group.label} value={group.label} className="border-none">
+                  <AccordionTrigger className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 hover:bg-muted/60 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                    <div className="flex items-center gap-2 text-left">
+                      <Folder className="size-5 text-primary" />
+                      <span className="font-semibold">{group.label}</span>
+                      <Badge variant="secondary" className="ml-2 font-normal">
+                        {group.entries.length} Pertemuan
+                      </Badge>
                     </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="rounded-b-lg border border-t-0 bg-muted/5 p-4 pt-4">
+                    <div className="space-y-4">
+                      <AnimatePresence initial={false}>
+                        {group.entries.map((e) => (
+                          <motion.div
+                            key={e.id}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden rounded-xl border bg-card"
+                          >
+                            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="grid size-7 place-items-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+                                  {e.originalIndex + 1}
+                                </span>
+                                <span className="text-sm font-medium">
+                                  Pertemuan ke-{e.minggu}
+                                </span>
+                              </div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                      onClick={() => handleDelete(e.id, e.minggu)}
+                                    >
+                                      <Trash2 className="size-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Hapus pertemuan</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
 
-                    <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
-                      <div className="space-y-1.5 lg:col-span-1">
-                        <Label className="text-xs">Pertemuan</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={e.minggu}
-                          onChange={(ev) =>
-                            updateEntry(e.id, {
-                              minggu: parseInt(ev.target.value, 10) || e.minggu,
-                            })
-                          }
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Hari</Label>
-                        <Select
-                          value={e.hari}
-                          onValueChange={(v) => updateEntry(e.id, { hari: v })}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {HARI.map((h) => (
-                              <SelectItem key={h} value={h}>
-                                {h}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Tanggal</Label>
-                        <Input
-                          type="date"
-                          value={e.tanggal}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { tanggal: ev.target.value })
-                          }
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs flex items-center gap-1">
-                          <Clock className="size-3" /> Jam Mulai
-                        </Label>
-                        <Input
-                          type="time"
-                          value={e.jamMulai}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { jamMulai: ev.target.value })
-                          }
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs flex items-center gap-1">
-                          <Clock className="size-3" /> Jam Selesai
-                        </Label>
-                        <Input
-                          type="time"
-                          value={e.jamSelesai}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { jamSelesai: ev.target.value })
-                          }
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2 lg:col-span-5">
-                        <Label className="text-xs">Tujuan Pembelajaran</Label>
-                        <Input
-                          value={e.tujuan}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { tujuan: ev.target.value })
-                          }
-                          placeholder="mis. Siswa mampu mengenal harokat fathah"
-                        />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-                        <Label className="text-xs">Materi</Label>
-                        <Textarea
-                          rows={2}
-                          value={e.materi}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { materi: ev.target.value })
-                          }
-                          placeholder="mis. Harokat fathah, contoh بَ تَ ثَ"
-                          className="resize-y"
-                        />
-                      </div>
-                      <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-                        <Label className="text-xs">Penilaian</Label>
-                        <Textarea
-                          rows={2}
-                          value={e.penilaian}
-                          onChange={(ev) =>
-                            updateEntry(e.id, { penilaian: ev.target.value })
-                          }
-                          placeholder="mis. Lisan, tulisan, observasi"
-                          className="resize-y"
-                        />
-                      </div>
+                            <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+                              <div className="space-y-1.5 lg:col-span-1">
+                                <Label className="text-xs">Pertemuan</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={e.minggu}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, {
+                                      minggu: parseInt(ev.target.value, 10) || e.minggu,
+                                    })
+                                  }
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Hari</Label>
+                                <Select
+                                  value={e.hari}
+                                  onValueChange={(v) => updateEntry(e.id, { hari: v })}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {HARI.map((h) => (
+                                      <SelectItem key={h} value={h}>
+                                        {h}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Tanggal</Label>
+                                <Input
+                                  type="date"
+                                  value={e.tanggal}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { tanggal: ev.target.value })
+                                  }
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <Clock className="size-3" /> Jam Mulai
+                                </Label>
+                                <Input
+                                  type="time"
+                                  value={e.jamMulai}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { jamMulai: ev.target.value })
+                                  }
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <Clock className="size-3" /> Jam Selesai
+                                </Label>
+                                <Input
+                                  type="time"
+                                  value={e.jamSelesai}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { jamSelesai: ev.target.value })
+                                  }
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-1.5 sm:col-span-2 lg:col-span-5">
+                                <Label className="text-xs">Tujuan Pembelajaran</Label>
+                                <Input
+                                  value={e.tujuan}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { tujuan: ev.target.value })
+                                  }
+                                  placeholder="mis. Siswa mampu mengenal harokat fathah"
+                                />
+                              </div>
+                              <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+                                <Label className="text-xs">Materi</Label>
+                                <Textarea
+                                  rows={2}
+                                  value={e.materi}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { materi: ev.target.value })
+                                  }
+                                  placeholder="mis. Harokat fathah, contoh بَ تَ ثَ"
+                                  className="resize-y"
+                                />
+                              </div>
+                              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+                                <Label className="text-xs">Penilaian</Label>
+                                <Textarea
+                                  rows={2}
+                                  value={e.penilaian}
+                                  onChange={(ev) =>
+                                    updateEntry(e.id, { penilaian: ev.target.value })
+                                  }
+                                  placeholder="mis. Lisan, tulisan, observasi"
+                                  className="resize-y"
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           )}
         </CardContent>
       </Card>

@@ -34,7 +34,17 @@ export const DEFAULT_DATA: AppData = {
     kepsek: { nama: "", nip: "" },
     guru: { nama: "", nip: "" },
   },
-  pengaturan: { presetAktif: "kurmer", kategori: DEFAULT_KATEGORI },
+  pengaturan: { 
+    presetAktif: "kurmer", 
+    kategori: DEFAULT_KATEGORI,
+    tema: {
+      tipe: "default",
+      warnaSolid: "#0f172a",
+      warnaGradient: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+      wallpaperUrl: "",
+      glassOpacity: 0.7
+    }
+  },
   meta: { schema: SCHEMA_VERSION, created: new Date().toISOString() },
 };
 

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PWARegistrar } from "@/components/pwa-registrar";
+import { CustomThemeProvider } from "@/components/custom-theme-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -85,6 +86,7 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
           <PWARegistrar />
+          <CustomThemeProvider />
         </ThemeProvider>
       </body>
     </html>

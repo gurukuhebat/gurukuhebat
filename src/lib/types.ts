@@ -80,9 +80,18 @@ export interface Kategori {
   warna: string;
 }
 
+export interface TemaConfig {
+  tipe: "default" | "solid" | "gradient" | "wallpaper";
+  warnaSolid: string; // e.g. "#1e293b"
+  warnaGradient: string; // e.g. "linear-gradient(to right, #ff7e5f, #feb47b)"
+  wallpaperUrl: string; // base64
+  glassOpacity: number; // 0.1 - 0.9 for cards when wallpaper is active
+}
+
 export interface Pengaturan {
   presetAktif: string;
   kategori: Kategori[];
+  tema?: TemaConfig;
 }
 
 export interface AppMeta {

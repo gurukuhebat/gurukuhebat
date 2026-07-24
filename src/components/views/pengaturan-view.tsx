@@ -18,6 +18,7 @@ import {
   Plus,
   X,
   Settings,
+  Palette,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,10 @@ export function PengaturanView() {
             <Settings className="mr-1 size-4" />
             Bobot &amp; Kategori
           </TabsTrigger>
+          <TabsTrigger value="tema" className="flex-1 min-w-[120px]">
+            <Palette className="mr-1 size-4" />
+            Tema &amp; Tampilan
+          </TabsTrigger>
           <TabsTrigger value="backup" className="flex-1 min-w-[120px]">
             <Database className="mr-1 size-4" />
             Backup
@@ -98,6 +103,10 @@ export function PengaturanView() {
 
         <TabsContent value="bobot" className="mt-4">
           <BobotPanel />
+        </TabsContent>
+
+        <TabsContent value="tema" className="mt-4">
+          <TemaPanel />
         </TabsContent>
 
         <TabsContent value="backup" className="mt-4">
@@ -633,6 +642,164 @@ function BobotPanel() {
               Simpan Kategori
             </Button>
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ============================== TEMA PANEL ============================== */
+
+function TemaPanel() {
+  const pengaturan = useStore((s) => s.pengaturan);
+  const setPengaturan = useStore((s) => s.setPengaturan);
+  const tema = pengaturan.tema || { tipe: "default", warnaSolid: "#0f172a", warnaGradient: "linear-gradient(135deg, #0f172a 0%, #334155 100%)", wallpaperUrl: "", glassOpacity: 0.7 };
+
+  const updateTema = (patch: Partial<typeof tema>) => {
+    setPengaturan({ ...pengaturan, tema: { ...tema, ...patch } });
+  };
+
+  const fileRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleUploadWallpaper = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+       toast.info("Mengompres ukuran gambar...");
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        // Compress and resize (max width/height 1920)
+        let w = img.width;
+        let h = img.height;
+        if (w > 1920 || h > 1080) {
+          const ratio = Math.min(1920 / w, 1080 / h);
+          w *= ratio;
+          h *= ratio;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // 70% quality jpeg
+          updateTema({ tipe: "wallpaper", wallpaperUrl: dataUrl });
+          toast.success("Wallpaper berhasil disimpan!");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const gradients = [
+    "linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)",
+    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+    "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+    "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+    "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+    "linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)",
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Card className="card-fancy">
+        <CardHeader>
+          <CardTitle className="text-base">Kustomisasi Tema &amp; Latar Belakang</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          
+          <div className="space-y-3 border-b pb-4 border-border/50">
+            <h4 className="text-sm font-semibold">Gaya Tema</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button variant={tema.tipe === "default" ? "default" : "outline"} onClick={() => updateTema({ tipe: "default" })}>
+                Bawaan
+              </Button>
+              <Button variant={tema.tipe === "solid" ? "default" : "outline"} onClick={() => updateTema({ tipe: "solid" })}>
+                Warna Solid
+              </Button>
+              <Button variant={tema.tipe === "gradient" ? "default" : "outline"} onClick={() => updateTema({ tipe: "gradient" })}>
+                Gradasi Keren
+              </Button>
+              <Button variant={tema.tipe === "wallpaper" ? "default" : "outline"} onClick={() => updateTema({ tipe: "wallpaper" })}>
+                Wallpaper
+              </Button>
+            </div>
+          </div>
+
+          {tema.tipe === "solid" && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+              <Label>Pilih Warna Solid</Label>
+              <div className="flex gap-4 items-center">
+                <input type="color" value={tema.warnaSolid} onChange={(e) => updateTema({ warnaSolid: e.target.value })} className="h-10 w-20 cursor-pointer rounded border border-border bg-background p-1" />
+                <span className="text-sm text-muted-foreground uppercase">{tema.warnaSolid}</span>
+              </div>
+            </div>
+          )}
+
+          {tema.tipe === "gradient" && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+              <Label>Pilihan Gradasi</Label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {gradients.map((g) => (
+                  <button
+                    key={g}
+                    className={`h-20 rounded-xl border-2 transition-all hover:scale-105 active:scale-95 ${tema.warnaGradient === g ? "border-primary ring-2 ring-primary/30 ring-offset-2 ring-offset-background" : "border-transparent"}`}
+                    style={{ background: g }}
+                    onClick={() => updateTema({ warnaGradient: g })}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tema.tipe === "wallpaper" && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={() => fileRef.current?.click()} variant="secondary">
+                  <Upload className="mr-2 size-4" />
+                  Unggah Gambar Wallpaper
+                </Button>
+                {tema.wallpaperUrl && (
+                  <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => updateTema({ wallpaperUrl: "" })}>
+                    <Trash2 className="mr-2 size-4" />
+                    Hapus
+                  </Button>
+                )}
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUploadWallpaper} />
+              </div>
+              
+              {tema.wallpaperUrl && (
+                <div className="space-y-3 rounded-xl border bg-muted/10 p-4">
+                  <Label>Efek Kaca (Glassmorphism)</Label>
+                  <Slider
+                    value={[tema.glassOpacity * 100]}
+                    min={0}
+                    max={100}
+                    step={10}
+                    onValueChange={(val) => updateTema({ glassOpacity: val[0] / 100 })}
+                    className="py-2"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Atur agar teks tetap terbaca. Semakin kecil angkanya, kartu-kartu tabel akan semakin tembus pandang.
+                  </div>
+                  
+                  <div className="mt-2 overflow-hidden rounded-xl border shadow-sm">
+                    <img src={tema.wallpaperUrl} alt="Wallpaper Preview" className="h-40 w-full object-cover" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </CardContent>
       </Card>
     </div>

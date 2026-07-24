@@ -3,6 +3,8 @@ import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -79,6 +81,8 @@ export default function RootLayout({
         >
           {children}
           <Sonner position="top-right" richColors closeButton />
+          <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>

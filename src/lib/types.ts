@@ -92,6 +92,7 @@ export interface Pengaturan {
   presetAktif: string;
   kategori: Kategori[];
   tema?: TemaConfig;
+  showTutorial?: boolean;
 }
 
 export interface AppMeta {

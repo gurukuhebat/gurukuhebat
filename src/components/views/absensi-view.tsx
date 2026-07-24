@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PanduanFitur } from "@/components/shared/panduan-fitur";
 import {
   Table,
   TableBody,
@@ -282,6 +283,14 @@ export function AbsensiView() {
 
   return (
     <div className="space-y-6">
+      <PanduanFitur title="Absensi Kehadiran">
+        Menu ini digunakan untuk mendata kehadiran siswa per hari/pertemuan.
+        <ul className="mt-2 list-disc pl-4 space-y-1">
+          <li><strong>Mode Tabel:</strong> Tampilan Excel di mana Bapak/Ibu bisa mengatur absensi (Hadir, Sakit, Izin) melalui menu titik tiga di sebelah kanan tabel.</li>
+          <li><strong>Mode Grid Cepat:</strong> Tampilan kotak-kotak besar. Cukup <strong>klik</strong> di kotak nama siswa untuk mengubah statusnya dari Hadir (H) → Sakit (S) → Izin (I) → Alpa (A) secara cepat!</li>
+        </ul>
+      </PanduanFitur>
+
       {/* Header */}
       <div className="space-y-1">
         <Badge variant="secondary" className="w-fit">

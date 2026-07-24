@@ -32,13 +32,24 @@ import { useConfirm } from "@/components/shared/confirm-dialog";
 import { IdentityForm } from "@/components/shared/identity-form";
 import { AssetUploadDialog } from "@/components/shared/asset-upload-dialog";
 import { PRESET_BOBOT, DEFAULT_KATEGORI } from "@/lib/bobot";
-import type { Aset, Kategori, Pengesahan, Pengaturan } from "@/lib/types";
+import type { Aset, Kategori, Pengesahan, Pengaturan, TemaConfig } from "@/lib/types";
 import { toast } from "sonner";
+import { PanduanFitur } from "@/components/shared/panduan-fitur";
+import { Switch } from "@/components/ui/switch";
 import { removeWhiteBackground } from "@/lib/image";
 
 export function PengaturanView() {
   return (
     <div className="space-y-6">
+      <PanduanFitur title="Pengaturan & Tema">
+        Di menu ini Bapak/Ibu bisa mengubah data utama aplikasi.
+        <ul className="mt-2 list-disc pl-4 space-y-1">
+          <li><strong>Data Sekolah:</strong> Isi logo, nama Kepsek, dsb agar muncul di semua PDF.</li>
+          <li><strong>Kustomisasi Tema:</strong> Ubah warna, gradasi, atau pasang foto latar belakang (wallpaper).</li>
+          <li><strong>Cadangkan Data:</strong> Simpan atau pulihkan data agar aman tidak hilang.</li>
+        </ul>
+      </PanduanFitur>
+
       <div className="space-y-1">
         <Badge variant="secondary" className="w-fit">Pengaturan</Badge>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
@@ -443,6 +454,10 @@ function BobotPanel() {
     setKategori(pengaturan.kategori);
   }, [pengaturan]);
 
+  const toggleTutorial = (val: boolean) => {
+    setPengaturan({ ...pengaturan, showTutorial: val });
+  };
+
   const handleAddKategori = () => {
     setKategori((k) => [
       ...k,
@@ -483,6 +498,7 @@ function BobotPanel() {
       return;
     }
     const next: Pengaturan = {
+      ...pengaturan,
       presetAktif: preset,
       kategori,
     };
@@ -492,6 +508,21 @@ function BobotPanel() {
 
   return (
     <div className="space-y-4">
+      <Card className="card-fancy">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-card shadow-sm">
+            <div className="space-y-0.5">
+              <Label className="text-base font-semibold">Tampilkan Panduan Pengguna</Label>
+              <p className="text-sm text-muted-foreground">Munculkan kotak panduan di setiap halaman fitur.</p>
+            </div>
+            <Switch 
+              checked={pengaturan.showTutorial !== false}
+              onCheckedChange={toggleTutorial}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="card-fancy">
         <CardHeader>
           <CardTitle className="text-base">Preset Bobot Default</CardTitle>
@@ -655,8 +686,8 @@ function TemaPanel() {
   const setPengaturan = useStore((s) => s.setPengaturan);
   const tema = pengaturan.tema || { tipe: "default", warnaSolid: "#0f172a", warnaGradient: "linear-gradient(135deg, #0f172a 0%, #334155 100%)", wallpaperUrl: "", glassOpacity: 0.7 };
 
-  const updateTema = (patch: Partial<typeof tema>) => {
-    setPengaturan({ ...pengaturan, tema: { ...tema, ...patch } });
+  const updateTema = (updates: Partial<TemaConfig>) => {
+    setPengaturan({ ...pengaturan, tema: { ...tema, ...updates } });
   };
 
   const fileRef = React.useRef<HTMLInputElement | null>(null);

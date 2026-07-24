@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { PanduanFitur } from "@/components/shared/panduan-fitur";
 import {
   Tabs,
   TabsContent,
@@ -777,7 +778,16 @@ function KomponenPanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <PanduanFitur title="Daftar Nilai">
+        Gunakan menu ini untuk merekap nilai harian, UTS, maupun UAS.
+        <ul className="mt-2 list-disc pl-4 space-y-1">
+          <li><strong>Bagian B:</strong> Buat dahulu apa saja yang dinilai (misalnya: Tugas 1, Ulangan Harian, UTS). Bisa dikustomisasi bobot persennya.</li>
+          <li><strong>Bagian C:</strong> Masukkan nilai berupa angka untuk masing-masing siswa.</li>
+          <li><strong>Impor Excel:</strong> Daripada mengetik satu per satu, Bapak/Ibu bisa mengunduh template Excel, mengisinya di laptop, lalu mengunggahnya kembali ke sini.</li>
+        </ul>
+      </PanduanFitur>
+
       {/* Presets */}
       <Card className="card-fancy">
         <CardHeader>

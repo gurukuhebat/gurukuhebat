@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { hitungNilaiAkhir, kategoriNilai } from "@/lib/bobot";
 import type { ViewKey } from "@/lib/types";
+import { PanduanFitur } from "@/components/shared/panduan-fitur";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -298,7 +299,15 @@ export function BerandaView() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <PanduanFitur title="Beranda">
+        Selamat datang di Dasbor Guru Hebat! Di sini Bapak/Ibu bisa melihat ringkasan data secara cepat:
+        <ul className="mt-2 list-disc pl-4 space-y-1">
+          <li><strong>Grafik & Ringkasan:</strong> Melihat tren nilai dan absensi secara visual.</li>
+          <li><strong>Notifikasi Cerdas:</strong> Menampilkan peringatan jika ada data yang belum lengkap sebelum dicetak.</li>
+        </ul>
+      </PanduanFitur>
+
       {/* HERO */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}

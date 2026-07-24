@@ -26,6 +26,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -48,6 +57,7 @@ import { cetakJurnal, cetakSesuaiPratinjau } from "@/lib/pdf";
 import { tglPendek, todayISO } from "@/lib/format";
 import { uid } from "@/lib/bobot";
 import { toast } from "sonner";
+import { PanduanFitur } from "@/components/shared/panduan-fitur";
 
 const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
@@ -62,6 +72,11 @@ export function JurnalView() {
 
   const confirm = useConfirm();
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  
+  // Dialog Cetak/Preview
+  const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
+  const [printMode, setPrintMode] = React.useState<"sharp" | "visual">("sharp");
+  const [selectedMonths, setSelectedMonths] = React.useState<string[]>([]);
 
   // Grouping Logic
   const groupedJurnal = React.useMemo(() => {
@@ -144,18 +159,43 @@ export function JurnalView() {
     return true;
   };
 
-  const handlePreview = () => {
-    if (!jurnal.length) {
-      toast.warning("Belum ada entri untuk dipratinjau.");
-      return;
-    }
-    setPreviewOpen(true);
+  const getFilteredJurnal = () => {
+    return jurnal.filter((e) => {
+      const d = new Date(e.tanggal);
+      const label = isNaN(d.getTime()) 
+        ? "Draft / Belum Ditentukan" 
+        : new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(d);
+      return selectedMonths.includes(label);
+    });
   };
 
-  const handleSharpPDF = async () => {
+  const handleOpenPrintDialog = (mode: "sharp" | "visual") => {
+    if (!jurnal.length) {
+      toast.warning("Belum ada entri untuk dicetak.");
+      return;
+    }
+    setSelectedMonths(allGroupKeys); // Default check all
+    setPrintMode(mode);
+    setPrintDialogOpen(true);
+  };
+
+  const executePrint = async () => {
+    setPrintDialogOpen(false);
     if (!validateBeforeCetak()) return;
+    
+    if (printMode === "visual") {
+      setPreviewOpen(true);
+      return;
+    }
+
     try {
-      await cetakJurnal(exportData());
+      const dataToExport = exportData();
+      dataToExport.jurnal = getFilteredJurnal();
+      if (!dataToExport.jurnal.length) {
+         toast.warning("Tidak ada jurnal di bulan yang dipilih.");
+         return;
+      }
+      await cetakJurnal(dataToExport);
       toast.success("PDF Jurnal (Tajam) berhasil diunduh.");
     } catch (e) {
       console.error(e);
@@ -165,6 +205,15 @@ export function JurnalView() {
 
   return (
     <div className="space-y-6">
+      <PanduanFitur title="Jurnal Harian">
+        Di menu ini Bapak/Ibu bisa mencatat kegiatan mengajar setiap hari.
+        <ul className="mt-2 list-disc pl-4 space-y-1">
+          <li>Klik <strong>+ Tambah Pertemuan</strong> untuk mulai membuat catatan baru.</li>
+          <li>Gunakan tombol <strong>✨ Salin dari Minggu Lalu</strong> jika kegiatan mirip dengan sebelumnya.</li>
+          <li>Tombol <strong>Cetak / PDF</strong> bisa diatur untuk mengunduh bulan tertentu saja (misal: Januari saja).</li>
+        </ul>
+      </PanduanFitur>
+
       {/* Page Head */}
       <div className="space-y-1">
         <Badge variant="secondary" className="w-fit">Jurnal</Badge>
@@ -187,11 +236,11 @@ export function JurnalView() {
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={handlePreview}>
+            <Button variant="secondary" onClick={() => handleOpenPrintDialog("visual")}>
               <Eye className="mr-1.5 size-4" />
               Pratinjau
             </Button>
-            <Button onClick={handleSharpPDF}>
+            <Button onClick={() => handleOpenPrintDialog("sharp")}>
               <FileText className="mr-1.5 size-4" />
               Cetak / PDF (Tajam)
             </Button>
@@ -442,21 +491,51 @@ export function JurnalView() {
         title="Pratinjau Dokumen Jurnal"
         onPrintSharp={async () => {
           setPreviewOpen(false);
-          await handleSharpPDF();
+          await executePrint();
         }}
         onPrintVisual={async (node) => {
           if (!validateBeforeCetak()) return;
           await cetakSesuaiPratinjau(node, "Jurnal-Pembelajaran");
         }}
       >
-        <JurnalDocument />
+        <JurnalDocument filteredJurnal={getFilteredJurnal()} />
       </DocPreviewDialog>
+
+      {/* Print Filter Dialog */}
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Pilih Bulan untuk Dicetak</DialogTitle>
+            <DialogDescription>
+              Ceklis bulan yang ingin Bapak/Ibu sertakan di dalam PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 flex flex-col gap-3 max-h-[300px] overflow-y-auto">
+             {allGroupKeys.map((label) => (
+                <div key={label} className="flex items-center gap-2">
+                   <Checkbox 
+                     id={`chk-${label}`} 
+                     checked={selectedMonths.includes(label)}
+                     onCheckedChange={(c) => {
+                       if (c) setSelectedMonths(prev => [...prev, label]);
+                       else setSelectedMonths(prev => prev.filter(m => m !== label));
+                     }}
+                   />
+                   <Label htmlFor={`chk-${label}`}>{label}</Label>
+                </div>
+             ))}
+          </div>
+          <DialogFooter>
+             <Button variant="secondary" onClick={() => setPrintDialogOpen(false)}>Batal</Button>
+             <Button onClick={executePrint} disabled={selectedMonths.length === 0}>Lanjutkan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function JurnalDocument() {
-  const jurnal = useStore((s) => s.jurnal);
+function JurnalDocument({ filteredJurnal }: { filteredJurnal: any[] }) {
   const identitas = useStore((s) => s.identitas);
 
   return (
@@ -487,7 +566,7 @@ function JurnalDocument() {
           </tr>
         </thead>
         <tbody>
-          {jurnal.map((e) => {
+          {filteredJurnal.map((e) => {
             const jam =
               e.jamMulai || e.jamSelesai
                 ? `${e.jamMulai || "--"} – ${e.jamSelesai || "--"}`
